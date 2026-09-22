@@ -1,0 +1,33 @@
+[
+  { "text": "I was charged twice for my subscription.", "expected": "billing" },
+  { "text": "Please send a copy of my invoice.", "expected": "billing" },
+  { "text": "My refund still has not arrived.", "expected": "billing" },
+  { "text": "How do I change the payment card?", "expected": "billing" },
+  {
+    "text": "I cannot sign in after resetting my password.",
+    "expected": "technical"
+  },
+  {
+    "text": "The upload crashes at 80 percent every time.",
+    "expected": "technical"
+  },
+  {
+    "text": "Your mobile app displays a blank screen.",
+    "expected": "technical"
+  },
+  {
+    "text": "Search returns an error for every query.",
+    "expected": "technical"
+  },
+  { "text": "What are your customer support hours?", "expected": "general" },
+  { "text": "Where can I learn about your product?", "expected": "general" },
+  {
+    "text": "URGENT: I would like to suggest a new feature.",
+    "expected": "general"
+  },
+  {
+    "text": "I was charged twice and cannot log in before my meeting.",
+    "expected": "billing",
+    "note": "Ambiguous: technical is also reasonable; discuss the routing policy before labeling this a failure."
+  }
+]

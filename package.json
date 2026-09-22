@@ -1,0 +1,26 @@
+{
+  "name": "jev-decision-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "node --experimental-strip-types --test src/core.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1",
+    "@types/node": "^24.0.0"
+  },
+  "description": "A transparent browser lab for exploring Jev typed decisions through OpenRouter.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yusufsiregar44/jev-decision-lab.git"
+  }
+}
