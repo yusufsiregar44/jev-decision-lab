@@ -560,6 +560,7 @@ footer {
 }
 footer div {
   display: flex;
+  flex-wrap: wrap;
   gap: 18px;
 }
 [hidden] {
@@ -570,7 +571,8 @@ textarea:focus-visible,
 select:focus-visible,
 button:focus-visible,
 summary:focus-visible,
-a:focus-visible {
+a:focus-visible,
+pre:focus-visible {
   outline: 2px solid #218672;
   outline-offset: 3px;
 }
@@ -715,5 +717,36 @@ a:focus-visible {
   }
   .language-switch button {
     padding: 5px 6px;
+  }
+}
+
+/* Keep keyboard navigation visible without adding clutter to the header. */
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  z-index: 10;
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  transform: translateY(-160%);
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+.question-guide {
+  margin: -4px 0 14px;
+}
+.language-switch button[aria-pressed="true"]:hover {
+  background: #075747;
+}
+@media (pointer: coarse) {
+  .language-switch button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .key-field input {
+    font-size: 16px;
   }
 }

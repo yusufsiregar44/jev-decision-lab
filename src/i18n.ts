@@ -2,6 +2,11 @@ export type Language = "en" | "id";
 
 // UI copy only. Never pass raw JSON, model values, or user input through this map.
 const indonesian: Record<string, string> = {
+  "Skip to workspace": "Langsung ke area kerja",
+  "Choice picks an option. Score rates it. Noul estimates the chance of yes. Open a question to edit it.":
+    "Choice memilih jawaban. Score memberi nilai. Noul memperkirakan peluang jawaban ya. Buka pertanyaan untuk mengubahnya.",
+  "Confidence is a model signal, not a guarantee of accuracy.":
+    "Keyakinan menunjukkan penilaian model, bukan jaminan jawabannya benar.",
   "Jev Decision Lab home": "Beranda Jev Decision Lab",
   "OpenRouter key": "Kunci OpenRouter",
   "OpenRouter API key": "Kunci API OpenRouter",

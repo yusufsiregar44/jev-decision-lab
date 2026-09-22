@@ -14,7 +14,7 @@ import { translate, type Language } from "./i18n.ts";
 let language: Language = "en";
 const t = (text: string) => translate(text, language);
 const root = document.querySelector<HTMLDivElement>("#app")!;
-root.innerHTML = `<header>
+root.innerHTML = `<a class="skip-link" href="#main-content">Skip to workspace</a><header>
   <a class="brand" href="./" aria-label="Jev Decision Lab home"><span class="brand-mark" aria-hidden="true">j.</span><h1>Jev <span>Decision Lab</span></h1></a>
   <div class="language-switch" role="group" aria-label="Language / Bahasa"><button type="button" data-language="en" lang="en" aria-label="English" aria-pressed="true">EN</button><button type="button" data-language="id" lang="id" aria-label="Bahasa Indonesia" aria-pressed="false">ID</button></div>
   <div class="key-control" id="key-control">
@@ -25,7 +25,7 @@ root.innerHTML = `<header>
   </div>
 </header>
 <div class="notice" id="key-note"><strong>Runtime only. Never saved.</strong> Your key goes directly to OpenRouter, stays out of storage and logs, and clears on reload. <span>Green means supplied, not validated.</span></div>
-<main>
+<main id="main-content" tabindex="-1">
   <div class="column">
     <div class="column-heading"><span class="step-number">01</span><div><h2>Configure</h2><p class="sub">Give Jev something to decide.</p></div></div>
     <section>
@@ -37,7 +37,7 @@ root.innerHTML = `<header>
       <label for="input" class="spaced-label">Input state</label><textarea id="input" rows="4" aria-describedby="input-help"></textarea>
       <p class="sub" id="input-help">This text is shared with all three questions.</p>
     </section>
-    <section class="questions-panel"><div class="section-heading"><h3>Three focused questions</h3><span class="badge">Editable</span></div>
+    <section class="questions-panel"><div class="section-heading"><h3>Three focused questions</h3><span class="badge">Editable</span></div><p class="sub question-guide">Choice picks an option. Score rates it. Noul estimates the chance of yes. Open a question to edit it.</p>
       <details class="question" open><summary><span class="kind">Choice</span><span id="choice-summary">Choose one option</span></summary><div class="question-editor">
         <label for="choice">Question</label><textarea id="choice" rows="2"></textarea>
         <label for="options">Options <span class="sub">· one per line</span></label><textarea id="options" rows="3"></textarea>
@@ -52,8 +52,8 @@ root.innerHTML = `<header>
       </div></details>
     </section>
     <section><div class="section-heading"><h3>Routing threshold</h3><output id="threshold-value" for="threshold"></output></div>
-      <label for="threshold">Minimum choice confidence</label><input id="threshold" type="range" min="0" max="1" step="0.01" value="0.68">
-      <div class="range-labels"><span>More automatic routes</span><span>More human review</span></div>
+      <label for="threshold">Minimum choice confidence</label><input id="threshold" aria-describedby="confidence-help" type="range" min="0" max="1" step="0.01" value="0.68">
+      <p class="sub" id="confidence-help">Confidence is a model signal, not a guarantee of accuracy.</p><div class="range-labels"><span>More automatic routes</span><span>More human review</span></div>
       <p class="sub">Adjust freely. This rule runs locally without another API call.</p><details><summary>See the rule</summary><pre id="rule"></pre></details>
     </section>
   </div>
@@ -62,11 +62,11 @@ root.innerHTML = `<header>
     <section class="request-panel">
       <div class="section-heading"><h3>Jev 1.13</h3><span class="badge">Via OpenRouter</span></div>
       <div class="endpoint"><span>POST</span><code>${ENDPOINT}</code></div>
-      <button id="run" class="run" type="button" disabled>Run decision <span aria-hidden="true">↗</span></button><button id="cancel" type="button" hidden>Cancel request</button>
+      <button id="run" aria-describedby="run-help validation" class="run" type="button" disabled>Run decision <span aria-hidden="true">↗</span></button><button id="cancel" type="button" hidden>Cancel request</button>
       <p id="run-help" class="sub">Add your OpenRouter key to run. Each run uses your OpenRouter credits.</p>
       <div id="validation" class="error" hidden role="alert"></div>
       <div class="code-heading"><span>REQUEST BODY</span><button id="copy-request" type="button" class="copy-button">Copy JSON</button></div>
-      <pre id="request" class="request-code" aria-label="Exact JSON request body for next run"></pre>
+      <pre id="request" class="request-code" tabindex="0" aria-label="Exact JSON request body for next run"></pre>
       <p class="sub request-footnote">Your key is sent in the authorization header, never in this JSON.</p><span id="copy-status" class="sub" role="status"></span>
     </section>
   </div>
@@ -221,6 +221,7 @@ function update() {
   const key = field("api-key").value;
   const supplied = keySupplied(key);
   el("key-control").classList.toggle("ready", supplied);
+  el<HTMLButtonElement>("clear-key").disabled = !key.length;
   el("key-status").textContent = supplied
     ? t("Key supplied")
     : t("Key required");
