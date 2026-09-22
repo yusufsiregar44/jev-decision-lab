@@ -28,3 +28,41 @@ export const presets = {
   },
 };
 export type PresetId = keyof typeof presets;
+
+// Preset content is localized intentionally; raw answers are displayed as returned.
+export const localizedPresets = {
+  en: presets,
+  id: {
+    support: {
+      name: "Keluhan pelanggan",
+      text: "Saya ditagih dua kali untuk langganan yang sama. Sekarang saya juga tidak bisa masuk akun, padahal sebentar lagi ada rapat dengan klien.",
+      choice: "Tim mana yang sebaiknya menangani keluhan ini?",
+      options: ["penagihan", "bantuan teknis", "layanan umum"],
+      score: "Seberapa cepat keluhan ini perlu ditangani?",
+      levels: ["Bisa menunggu", "Minggu ini", "Hari ini"],
+      noul: "Apakah pelanggan sedang tidak bisa mengakses akunnya?",
+    },
+    research: {
+      name: "Relevansi riset bisnis",
+      text: "PT Maju Bersama melaporkan kenaikan pendapatan, tetapi arus kas menurun karena persediaan barang menumpuk. Manajemen memperkirakan permintaan akan pulih pada kuartal berikutnya.",
+      choice: "Apa topik utama informasi bisnis ini?",
+      options: ["kinerja keuangan", "kondisi industri", "topik lain"],
+      score: "Seberapa relevan informasi ini untuk riset arus kas perusahaan?",
+      levels: [
+        "Tidak relevan",
+        "Berkaitan secara tidak langsung",
+        "Berkaitan langsung",
+      ],
+      noul: "Apakah informasi ini menyebutkan penurunan arus kas?",
+    },
+    router: {
+      name: "Arahkan permintaan kerja",
+      text: "Tolong cari syarat pembatalan dalam dokumen kebijakan langganan perusahaan kita.",
+      choice: "Cara mana yang paling sesuai untuk menangani permintaan ini?",
+      options: ["cari dokumen", "gunakan kalkulator", "minta bantuan tim"],
+      score: "Seberapa jelas tugas yang diminta?",
+      levels: ["Belum jelas", "Sebagian sudah jelas", "Sudah jelas"],
+      noul: "Apakah jawaban memerlukan dokumen internal perusahaan?",
+    },
+  },
+};

@@ -9,10 +9,14 @@ import {
   type RequestBody,
   type ResponseBody,
 } from "./core.ts";
-import { presets, type PresetId } from "./presets.ts";
+import { presets, localizedPresets, type PresetId } from "./presets.ts";
+import { translate, type Language } from "./i18n.ts";
+let language: Language = "en";
+const t = (text: string) => translate(text, language);
 const root = document.querySelector<HTMLDivElement>("#app")!;
 root.innerHTML = `<header>
   <a class="brand" href="./" aria-label="Jev Decision Lab home"><span class="brand-mark" aria-hidden="true">j.</span><h1>Jev <span>Decision Lab</span></h1></a>
+  <div class="language-switch" role="group" aria-label="Language / Bahasa"><button type="button" data-language="en" lang="en" aria-label="English" aria-pressed="true">EN</button><button type="button" data-language="id" lang="id" aria-label="Bahasa Indonesia" aria-pressed="false">ID</button></div>
   <div class="key-control" id="key-control">
     <label for="api-key">OpenRouter key</label>
     <div class="key-field"><input id="api-key" type="password" placeholder="sk-or-v1-…" aria-label="OpenRouter API key" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="key-note key-status"><span class="dot" aria-hidden="true"></span></div>
@@ -29,6 +33,7 @@ root.innerHTML = `<header>
       <select id="preset">${Object.entries(presets)
         .map(([id, p]) => `<option value="${id}">${p.name}</option>`)
         .join("")}</select>
+      <div id="language-note" class="sub" role="status" hidden></div><button type="button" id="reload-example" class="quiet-button" hidden>Reload example</button>
       <label for="input" class="spaced-label">Input state</label><textarea id="input" rows="4" aria-describedby="input-help"></textarea>
       <p class="sub" id="input-help">This text is shared with all three questions.</p>
     </section>
@@ -80,6 +85,47 @@ root.innerHTML = `<header>
 </main>
 <footer><span>Built for learning. Independent of TypeSafe and OpenRouter.</span><div><a href="https://github.com/yusufsiregar44/jev-decision-lab" target="_blank" rel="noreferrer">Source on GitHub ↗</a><a href="https://docs.typesafe.ai/introduction" target="_blank" rel="noreferrer">Jev docs ↗</a><a href="https://openrouter.ai/labs/jev/compile" target="_blank" rel="noreferrer">API example ↗</a></div></footer>
 `;
+// Bind only interface copy once. Never translate entered text, JSON, or model output.
+const copyBindings: { node: Text; original: string }[] = [];
+const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+while (walker.nextNode()) {
+  const node = walker.currentNode as Text;
+  if (
+    node.textContent?.trim() &&
+    !node.parentElement?.closest(
+      "pre, code, textarea, select, .brand, .language-switch, #results",
+    )
+  ) {
+    copyBindings.push({ node, original: node.textContent });
+  }
+}
+const attributeBindings = Array.from(
+  root.querySelectorAll<HTMLElement>("[aria-label]"),
+)
+  .filter((node) => !node.closest(".language-switch"))
+  .map((node) => ({ node, original: node.getAttribute("aria-label")! }));
+function localizeStaticCopy() {
+  document.documentElement.lang = language;
+  for (const { node, original } of copyBindings) {
+    node.textContent = original.replace(original.trim(), t(original.trim()));
+  }
+  for (const { node, original } of attributeBindings)
+    node.setAttribute("aria-label", t(original));
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-language]")
+    .forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.language === language),
+      );
+    });
+  Object.entries(localizedPresets[language]).forEach(([id, preset]) => {
+    const option = document.querySelector<HTMLOptionElement>(
+      `#preset option[value="${id}"]`,
+    );
+    if (option) option.textContent = preset.name;
+  });
+}
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const field = (id: string) =>
@@ -87,6 +133,55 @@ const field = (id: string) =>
 let controller: AbortController | null = null;
 let result: ResponseBody | null = null;
 let snapshot: RequestBody | null = null;
+let runState: "idle" | "running" | "success" | "failed" = "idle";
+let responseMeta: { status: number; seconds: string } | null = null;
+let errorDetail = "";
+let cancelled = false;
+let copyState: "idle" | "copied" | "failed" = "idle";
+let editsPreserved = false;
+function activity() {
+  el("status").textContent =
+    runState === "running"
+      ? t("Sending request to OpenRouter…")
+      : runState === "success" && responseMeta
+        ? `HTTP ${responseMeta.status} · ${responseMeta.seconds} ${t("s round trip")}`
+        : runState === "failed"
+          ? t(
+              result
+                ? "Previous successful result retained below."
+                : "No response available.",
+            )
+          : t("Choose an example, add your key, and run a decision.");
+  el("result-badge").textContent = t(
+    runState === "running"
+      ? "Running"
+      : runState === "success"
+        ? "Live result"
+        : runState === "failed"
+          ? result
+            ? "Previous result"
+            : "Failed"
+          : "Ready when you are",
+  );
+  el("error").textContent = cancelled
+    ? t(
+        "Request cancelled or timed out. OpenRouter may already have processed it.",
+      )
+    : errorDetail
+      ? `${t("Request failed. Details:")} ${t(errorDetail)}`
+      : "";
+  el("copy-status").textContent =
+    copyState === "copied"
+      ? t("Request JSON copied. No authorization key included.")
+      : copyState === "failed"
+        ? t("Clipboard unavailable. Select the request text to copy it.")
+        : "";
+  el("language-note").hidden = !editsPreserved;
+  el("reload-example").hidden = !editsPreserved;
+  el("language-note").textContent = t(
+    "Your edits are unchanged. Reload the example to use this language; this replaces the current input and questions.",
+  );
+}
 const json = (v: unknown) => JSON.stringify(v, null, 2);
 const lines = (id: string) =>
   field(id)
@@ -113,36 +208,45 @@ function request(): RequestBody {
   };
 }
 function validation() {
-  if (!field("input").value.trim()) return "Enter input text.";
+  if (!field("input").value.trim()) return t("Enter input text.");
   if (["choice", "score", "noul"].some((id) => !field(id).value.trim()))
-    return "Fill in all three questions.";
-  if (lines("options").length < 2) return "Add at least two choice options.";
+    return t("Fill in all three questions.");
+  if (lines("options").length < 2) return t("Add at least two choice options.");
   if (new Set(lines("options")).size !== lines("options").length)
-    return "Choice options must be unique.";
-  if (lines("levels").length < 2) return "Add at least two rubric levels.";
+    return t("Choice options must be unique.");
+  if (lines("levels").length < 2) return t("Add at least two rubric levels.");
   return "";
 }
 function update() {
   const key = field("api-key").value;
   const supplied = keySupplied(key);
   el("key-control").classList.toggle("ready", supplied);
-  el("key-status").textContent = supplied ? "Key supplied" : "Key required";
+  el("key-status").textContent = supplied
+    ? t("Key supplied")
+    : t("Key required");
   const issue = validation();
   el<HTMLButtonElement>("run").disabled = !supplied || !!controller || !!issue;
   el("validation").hidden = !issue;
   el("validation").textContent = issue;
   el("request").textContent = redact(json(request()), key);
   el("choice-summary").textContent =
-    field("choice").value || "Choose one option";
-  el("score-summary").textContent = field("score").value || "Rate on a rubric";
-  el("noul-summary").textContent = field("noul").value || "Check a statement";
-  el("run").innerHTML = controller
-    ? "Running decision…"
-    : 'Run decision <span aria-hidden="true">↗</span>';
+    field("choice").value || t("Choose one option");
+  el("score-summary").textContent =
+    field("score").value || t("Rate on a rubric");
+  el("noul-summary").textContent =
+    field("noul").value || t("Check a statement");
+  el("run").textContent = controller
+    ? t("Running decision…")
+    : `${t("Run decision")} ↗`;
   el("run-help").textContent = !supplied
-    ? "Add your OpenRouter key to run. Each run uses your OpenRouter credits."
-    : "Each run sends the displayed request and uses your OpenRouter credits.";
-  el("copy-status").textContent = "";
+    ? t(
+        "Add your OpenRouter key to run. Each run uses your OpenRouter credits.",
+      )
+    : t(
+        "Each run sends the displayed request and uses your OpenRouter credits.",
+      );
+  copyState = "idle";
+  activity();
   el("stale").hidden = !snapshot || json(snapshot) === json(request());
 }
 function rule() {
@@ -159,9 +263,17 @@ function rule() {
           ?.criteria ?? {},
       ),
     );
-    el("action").textContent = decision.action;
-    el("reason").textContent = decision.reason;
+    el("action").textContent =
+      decision.action === "Human review" ? t("Human review") : decision.action;
+    el("reason").textContent = decision.reason.startsWith("Confidence ")
+      ? `${t("Confidence")}: ${(result.answers.choice as { confidence: number }).confidence.toFixed(2)} ${t(decision.action === "Human review" ? "is below threshold" : "meets threshold")} ${threshold.toFixed(2)}.`
+      : t(decision.reason);
     el("route").classList.toggle("review", decision.action === "Human review");
+  } else {
+    el("action").textContent = t("Waiting for Jev");
+    el("reason").textContent = t(
+      "The choice and confidence will determine the route.",
+    );
   }
 }
 function renderResults() {
@@ -173,11 +285,12 @@ function renderResults() {
   const usage = result.usage as Record<string, unknown> | undefined;
   metadata.textContent = [
     result.model && `Model: ${result.model}`,
-    result.provider && `Provider: ${result.provider}`,
-    usage?.input_tokens !== undefined && `Input tokens: ${usage.input_tokens}`,
+    result.provider && `${t("Provider")}: ${result.provider}`,
+    usage?.input_tokens !== undefined &&
+      `${t("Input tokens")}: ${usage.input_tokens}`,
     usage?.output_tokens !== undefined &&
-      `Output tokens: ${usage.output_tokens}`,
-    usage?.cost !== undefined && `Cost: $${usage.cost}`,
+      `${t("Output tokens")}: ${usage.output_tokens}`,
+    usage?.cost !== undefined && `${t("Cost")}: $${usage.cost}`,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -189,10 +302,10 @@ function renderResults() {
     label.className = "sub";
     label.textContent =
       answer.type === "choice"
-        ? "CHOICE · Selected option"
+        ? t("CHOICE · Selected option")
         : answer.type === "score"
-          ? "SCORE · Rubric rating"
-          : "NOUL · Probability of yes";
+          ? t("SCORE · Rubric rating")
+          : t("NOUL · Probability of yes");
     const question = document.createElement("p");
     question.className = "answer-question";
     const definition = snapshot?.questions[id] as
@@ -218,14 +331,14 @@ function renderResults() {
       const criteria = (snapshot?.questions[id] as { criteria?: unknown })
         ?.criteria;
       rubric.textContent = Array.isArray(criteria)
-        ? `Rubric: ${criteria.map((v, i) => `${i} = ${v}`).join(" · ")}`
-        : "Rubric unavailable";
+        ? `${t("Rubric")}: ${criteria.map((v, i) => `${i} = ${v}`).join(" · ")}`
+        : t("Rubric unavailable");
       box.append(rubric);
     }
     if (answer.type === "choice" || answer.type === "score") {
       const confidence = document.createElement("div");
       confidence.className = "sub";
-      confidence.textContent = `Confidence: ${answer.confidence ?? "not supplied"}`;
+      confidence.textContent = `${t("Confidence")}: ${answer.confidence ?? t("not supplied")}`;
       box.append(confidence);
       if (answer.probabilities && typeof answer.probabilities === "object")
         for (const [name, prob] of Object.entries(answer.probabilities)) {
@@ -267,7 +380,8 @@ function renderResults() {
   rule();
 }
 function loadPreset() {
-  const p = presets[field("preset").value as PresetId];
+  const p = localizedPresets[language][field("preset").value as PresetId];
+  editsPreserved = false;
   field("input").value = p.text;
   field("choice").value = p.choice;
   field("options").value = p.options.join("\n");
@@ -277,14 +391,49 @@ function loadPreset() {
   update();
 }
 field("preset").addEventListener("change", loadPreset);
+el("reload-example").addEventListener("click", loadPreset);
+function switchLanguage(next: Language) {
+  if (next === language) return;
+  const previous =
+    localizedPresets[language][field("preset").value as PresetId];
+  const original = {
+    input: previous.text,
+    choice: previous.choice,
+    options: previous.options.join("\n"),
+    score: previous.score,
+    levels: previous.levels.join("\n"),
+    noul: previous.noul,
+  };
+  const untouched = Object.entries(original).every(
+    ([id, value]) => field(id).value === value,
+  );
+  language = next;
+  localizeStaticCopy();
+  // Keep edited business text intact; changing UI language is not a translation API call.
+  if (untouched) loadPreset();
+  else {
+    editsPreserved = true;
+    update();
+  }
+  if (result) renderResults();
+  rule();
+  activity();
+}
+root
+  .querySelectorAll<HTMLButtonElement>("[data-language]")
+  .forEach((button) => {
+    button.addEventListener("click", () =>
+      switchLanguage(button.dataset.language as Language),
+    );
+  });
 el("copy-request").addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText(el("request").textContent ?? "");
-    el("copy-status").textContent =
-      "Request JSON copied. No authorization key included.";
+    copyState = "copied";
+    activity();
   } catch {
-    el("copy-status").textContent =
-      "Clipboard unavailable. Select the request text to copy it.";
+    copyState = "failed";
+    activity();
   }
 });
 for (const id of [
@@ -319,8 +468,10 @@ el("run").addEventListener("click", async () => {
   const timeout = window.setTimeout(() => controller?.abort(), 90000);
   el("cancel").hidden = false;
   el("error").hidden = true;
-  el("status").textContent = "Sending request to OpenRouter…";
-  el("result-badge").textContent = "Running";
+  runState = "running";
+  errorDetail = "";
+  cancelled = false;
+  activity();
   el("empty-state").hidden = true;
   el("results").setAttribute("aria-busy", "true");
   update();
@@ -332,19 +483,22 @@ el("run").addEventListener("click", async () => {
     el("snapshot").textContent = redact(json(body), key);
     el("raw-details").hidden = false;
     el("snapshot-details").hidden = false;
-    el("status").textContent =
-      `HTTP ${response.status} · ${((performance.now() - started) / 1000).toFixed(2)} s round trip`;
-    el("result-badge").textContent = "Live result";
+    runState = "success";
+    responseMeta = {
+      status: response.status,
+      seconds: ((performance.now() - started) / 1000).toFixed(2),
+    };
+    activity();
     renderResults();
   } catch (error) {
     el("error").hidden = false;
-    el("error").textContent = controller.signal.aborted
-      ? "Request cancelled or timed out. OpenRouter may already have processed it."
-      : redact(error instanceof Error ? error.message : String(error), key);
-    el("status").textContent = result
-      ? "Previous successful result retained below."
-      : "No response available.";
-    el("result-badge").textContent = result ? "Previous result" : "Failed";
+    cancelled = controller.signal.aborted;
+    errorDetail = redact(
+      error instanceof Error ? error.message : String(error),
+      key,
+    );
+    runState = "failed";
+    activity();
   } finally {
     key = "";
     window.clearTimeout(timeout);
@@ -354,5 +508,6 @@ el("run").addEventListener("click", async () => {
     update();
   }
 });
+localizeStaticCopy();
 loadPreset();
 rule();

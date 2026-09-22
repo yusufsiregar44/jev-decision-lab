@@ -673,3 +673,47 @@ a:focus-visible {
     transition: none !important;
   }
 }
+
+.language-switch {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f4f7f8;
+}
+.language-switch button {
+  border: 0;
+  background: transparent;
+  padding: 5px 8px;
+  font-size: 12px;
+  min-height: 30px;
+  border-radius: 5px;
+  color: #61737a;
+}
+.language-switch button[aria-pressed="true"] {
+  background: #096c5b;
+  color: white;
+}
+#language-note {
+  margin: 10px 0 5px;
+}
+@media (max-width: 620px) {
+  header {
+    gap: 8px;
+    padding: 12px;
+  }
+  .brand h1 span {
+    display: none;
+  }
+  .brand {
+    gap: 6px;
+  }
+  .key-control {
+    gap: 5px;
+  }
+  .language-switch button {
+    padding: 5px 6px;
+  }
+}

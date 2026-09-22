@@ -17,6 +17,12 @@ npm run dev
 
 Open the localhost URL printed by Vite. Enter an OpenRouter key (`sk-or-v1-…`) in the masked header field. Green means a key was supplied, not validated. **Run decision** makes a real, potentially billable API call; the app does not display simulated results as live output.
 
+## Language / Bahasa
+
+Use **EN / ID** in the header to switch the interface and built-in examples. Indonesian uses everyday business language. The switch keeps the runtime key, threshold, and existing results intact; it makes no API call. Edited input and questions are preserved, with an explicit **Reload example / Muat ulang contoh** action if you want to replace them with the selected language's example.
+
+Raw API requests, responses, model identifiers, and captured results keep their original values. Language selection lasts for the current page session; nothing is written to browser storage.
+
 ## Try it
 
 - **Support triage:** choose a team, score urgency, and assess whether account access is blocked.
