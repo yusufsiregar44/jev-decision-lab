@@ -1,3 +1,5 @@
+![Jev Decision Lab interface: configure questions on the left, inspect the exact request in the middle, and view results and the local rule on the right.](docs/ui-preview.png)
+
 # Jev Decision Lab
 
 A small browser app for learning Jev's typed decisions through OpenRouter. Edit input and questions on the left, inspect and send the exact request in the middle, then examine the model output and application rule on the right.
