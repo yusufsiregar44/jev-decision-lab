@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+  <title id="title">Jev Decision Lab architecture</title>
+  <desc id="desc">A static browser app prepares input and questions, previews JSON, and sends a request directly to OpenRouter with the runtime API key in the Authorization header. OpenRouter routes to TypeSafe Jev. The browser displays the response and applies a local confidence rule to propose a route or human review. No downstream action is executed.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto-start-reverse"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#344b48" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>
+    <style>
+      text { font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe Print', sans-serif; fill: #253d38; }
+      .title { font-size: 30px; font-weight: bold; }
+      .heading { font-size: 21px; font-weight: bold; }
+      .body { font-size: 17px; }
+      .small { font-size: 15px; fill: #52645f; }
+      .line { stroke: #344b48; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .flow { fill: none; stroke: #344b48; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1120" height="760" rx="18" fill="#fffdf8"/>
+  <text x="38" y="51" class="title">Small questions. Visible decisions.</text>
+  <text x="39" y="83" class="body">Jev Decision Lab · how one run works</text>
+
+  <!-- Deliberately irregular outlines give the diagram a whiteboard feel. -->
+  <path d="M31 123 Q360 120 716 125 L719 641 Q363 646 30 641 Z" fill="#f0f7f3" stroke="#699181" stroke-width="2" stroke-dasharray="9 7"/>
+  <text x="53" y="159" class="heading">Your browser</text>
+  <text x="53" y="184" class="small">Static TypeScript + Vite app · EN / ID</text>
+
+  <path d="M55 211 L319 209 L322 323 L56 325 Z" fill="#fffdf8" class="line"/>
+  <text x="73" y="243" class="heading">1. Set up a decision</text>
+  <text x="73" y="272" class="body">Business text + questions</text>
+  <text x="73" y="299" class="small">Choice · Score · Noul</text>
+
+  <path d="M391 210 L691 212 L689 325 L392 323 Z" fill="#e4f0ff" class="line"/>
+  <text x="410" y="243" class="heading">2. Inspect &amp; run</text>
+  <text x="410" y="272" class="body">Exact JSON request preview</text>
+  <text x="410" y="299" class="small">API key is never in this JSON</text>
+  <path d="M326 267 Q351 264 383 267" class="flow"/>
+
+  <path d="M826 210 L1083 212 L1085 326 L825 324 Z" fill="#fff0d5" class="line"/>
+  <text x="846" y="244" class="heading">OpenRouter</text>
+  <text x="846" y="273" class="body">Decisions API (alpha)</text>
+  <text x="846" y="300" class="small">Receives key + request</text>
+  <path d="M695 246 Q752 243 815 246" class="flow"/>
+  <text x="728" y="225" class="small">HTTPS POST</text>
+  <text x="736" y="272" class="small">Direct call</text>
+
+  <path d="M826 451 L1085 449 L1083 558 L825 560 Z" fill="#eee8fb" class="line"/>
+  <text x="846" y="483" class="heading">TypeSafe Jev</text>
+  <text x="846" y="513" class="body">typesafe/jev-1.13</text>
+  <text x="846" y="540" class="small">Produces typed answers</text>
+  <path d="M918 336 Q916 390 918 439" class="flow"/>
+  <path d="M993 439 Q995 390 993 336" class="flow"/>
+  <text x="846" y="388" class="small">Input</text>
+  <text x="1007" y="388" class="small">Answers</text>
+
+  <path d="M392 450 L691 452 L689 578 L391 576 Z" fill="#e4f0ff" class="line"/>
+  <text x="410" y="483" class="heading">3. Inspect the result</text>
+  <text x="410" y="513" class="body">Answers + response JSON</text>
+  <text x="410" y="540" class="small">Original request kept with result</text>
+  <text x="410" y="563" class="small">All held in page memory</text>
+  <path d="M815 304 L770 305 Q759 305 759 319 L759 393 Q759 405 746 405 L554 405 Q542 405 542 417 L542 439" class="flow"/>
+  <text x="569" y="385" class="small">Response via OpenRouter</text>
+
+  <path d="M56 451 L321 449 L319 578 L55 576 Z" fill="#fff0d5" class="line"/>
+  <text x="73" y="483" class="heading">4. Apply your rule</text>
+  <text x="73" y="513" class="body">Choice + confidence limit</text>
+  <text x="73" y="540" class="small">Propose a route or team review</text>
+  <text x="73" y="563" class="small">No downstream action runs</text>
+  <path d="M383 513 Q351 510 330 513" class="flow"/>
+  <text x="54" y="614" class="small">Change the threshold → recompute locally, with no extra API call.</text>
+
+  <path d="M40 677 Q548 675 1081 678" stroke="#d8ddd3" stroke-width="2" fill="none"/>
+  <text x="40" y="708" class="body">Key boundary: page memory → Authorization header → OpenRouter</text>
+  <text x="40" y="737" class="small">No app backend, database, analytics, or browser storage. Clear / reload removes the key from the app.</text>
+</svg>

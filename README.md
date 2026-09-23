@@ -4,6 +4,14 @@ A small browser app for learning Jev's typed decisions through OpenRouter. Edit 
 
 Built with TypeScript and Vite. No application backend, database, or saved credentials. An independent learning project, not affiliated with TypeSafe or OpenRouter.
 
+## Architecture
+
+![Architecture: the browser sends input and questions directly to OpenRouter, which routes to TypeSafe Jev. The response returns to the browser for inspection and a local confidence rule. The API key stays in page memory and the Authorization header.](docs/architecture.svg)
+
+The model supplies typed answers; your browser applies the routing rule. Adjusting the confidence threshold makes no additional API call and executes no downstream action. The key is sent directly to OpenRouter, with no application backend in between. See [Runtime key boundary](#runtime-key-boundary) for the full scope.
+
+[Open the full-size diagram](docs/architecture.svg) · The SVG is editable source.
+
 ## Run locally
 
 Requires Node.js 22.18+ and npm.
