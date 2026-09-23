@@ -2,6 +2,8 @@
 
 # Jev Decision Lab
 
+**[Open the live app →](https://yusufsiregar44.github.io/jev-decision-lab/)** · Bring your own OpenRouter key. EN / ID supported.
+
 A small browser app for learning Jev's typed decisions through OpenRouter. Edit input and questions on the left, inspect and send the exact request in the middle, then examine the model output and application rule on the right.
 
 Built with TypeScript and Vite. No application backend, database, or saved credentials. An independent learning project, not affiliated with TypeSafe or OpenRouter.
@@ -60,6 +62,10 @@ npm run preview
 CI runs install, tests, and build on Node.js 22. Tests use synthetic responses and need no key. Browser checks covered key gating and redaction, request snapshots, fractional scores, local threshold changes, cancellation, and narrow layouts. Separately, one real call through the user UI returned model `typesafe/jev-1.13-20260917`. This confirms that call worked; it is not an accuracy benchmark or a guarantee of future provider availability.
 
 The build produces `dist/` with relative asset paths for an HTTPS static host at a root or subpath. No server secrets are needed. Generated output and dependencies are excluded from source control. The OpenRouter Decisions endpoint is an alpha API; model access, CORS behavior, and the contract may change.
+
+## Deployment
+
+The live app is hosted on [GitHub Pages](https://yusufsiregar44.github.io/jev-decision-lab/). The `Deploy to GitHub Pages` workflow tests and builds each push to `main`, then publishes only `dist/`. It can also be run manually from Actions. No OpenRouter key or other application secret is configured in the build; each visitor supplies their own key at runtime.
 
 ## Small evaluation
 
